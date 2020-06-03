@@ -382,8 +382,7 @@ public class ExperimentRunDAORdbImpl implements ExperimentRunDAO {
       Transaction transaction = session.beginTransaction();
 
       List<String> accessibleExperimentRunIds =
-          getAccessibleExperimentRunIDs(
-              experimentRunIds, ModelDBActionEnum.ModelDBServiceActions.UPDATE);
+          getAccessibleExperimentRunIDs(experimentRunIds, ModelDBServiceActions.DELETE);
       if (accessibleExperimentRunIds.isEmpty()) {
         Status statusMessage =
             Status.newBuilder()

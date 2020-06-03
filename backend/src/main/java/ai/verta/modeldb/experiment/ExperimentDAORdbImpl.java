@@ -483,7 +483,7 @@ public class ExperimentDAORdbImpl implements ExperimentDAO {
   @Override
   public Boolean deleteExperiments(List<String> experimentIds) {
     List<String> accessibleExperimentIds =
-        getAccessibleExperimentIDs(experimentIds, ModelDBActionEnum.ModelDBServiceActions.UPDATE);
+        getAccessibleExperimentIDs(experimentIds, ModelDBActionEnum.ModelDBServiceActions.DELETE);
 
     if (accessibleExperimentIds.isEmpty()) {
       String errorMessage =

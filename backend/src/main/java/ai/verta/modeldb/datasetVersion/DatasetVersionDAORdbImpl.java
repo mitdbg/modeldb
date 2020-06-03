@@ -223,15 +223,31 @@ public class DatasetVersionDAORdbImpl implements DatasetVersionDAO {
 
   @Override
   public Boolean deleteDatasetVersions(List<String> datasetVersionIds) {
+    // Get self allowed resources id where user has delete permission
+    List<String> allowedDatasetVersionIds =
+        roleService.getAccessibleResourceIdsByActions(
+            ModelDBServiceResourceTypes.DATASET_VERSION,
+            ModelDBActionEnum.ModelDBServiceActions.DELETE,
+            datasetVersionIds);
+    if (allowedDatasetVersionIds.isEmpty()) {
+      Status status =
+          Status.newBuilder()
+              .setCode(Code.PERMISSION_DENIED_VALUE)
+              .setMessage("Access Denied for given datasetVersion Ids : " + datasetVersionIds)
+              .build();
+      throw StatusProto.toStatusRuntimeException(status);
+    }
     try (Session session = ModelDBHibernateUtil.getSessionFactory().openSession()) {
       Transaction transaction = session.beginTransaction();
       Query deletedDatasetVersionQuery =
           session.createQuery(UPDATE_DELETED_STATUS_DATASET_VERSION_QUERY_STRING);
       deletedDatasetVersionQuery.setParameter("deleted", true);
-      deletedDatasetVersionQuery.setParameter("datasetVersionIds", datasetVersionIds);
+      deletedDatasetVersionQuery.setParameter("datasetVersionIds", allowedDatasetVersionIds);
       int updatedCount = deletedDatasetVersionQuery.executeUpdate();
       LOGGER.debug(
-          "Mark DatasetVersions as deleted : {}, count : {}", datasetVersionIds, updatedCount);
+          "Mark DatasetVersions as deleted : {}, count : {}",
+          allowedDatasetVersionIds,
+          updatedCount);
       transaction.commit();
       LOGGER.debug("DatasetVersion deleted successfully");
       return true;
