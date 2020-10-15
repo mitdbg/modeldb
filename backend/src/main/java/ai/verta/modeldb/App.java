@@ -578,7 +578,10 @@ public class App implements ApplicationContextAware {
             datasetDAO,
             datasetVersionDAO));
     LOGGER.trace("Hydrated serviceImpl initialized");
-    wrapService(serverBuilder, new LineageServiceImpl(lineageDAO, experimentRunDAO, commitDAO));
+    wrapService(
+        serverBuilder,
+        new LineageServiceImpl(
+            lineageDAO, experimentRunDAO, repositoryDAO, commitDAO, blobDAO, roleService));
     LOGGER.trace("Lineage serviceImpl initialized");
 
     wrapService(

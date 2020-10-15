@@ -21,40 +21,69 @@ message LineageEntryEnum {
         UNKNOWN = 0; // Type 0 should always cause an error
         EXPERIMENT_RUN = 1;
         DATASET_VERSION = 2;
+        BLOB = 3;
     }
-};
-
-message LineageEntry {
-    LineageEntryEnum.LineageEntryType type = 1;
-    oneof description {
-        // External ID of the item for the given type, if compatible
-        string external_id = 2;
-    };
 }
 
-// Represent a set of lineage items, essentially an array so that it can be embedded on other proto messages.
-message LineageEntryBatch {
-    repeated LineageEntry items = 1;
+message VersioningLineageEntry {
+    uint64 repository_id = 1;
+    string commit_sha = 2;
+    repeated string location = 3;
+ }
+
+message LineageEntry {
+    LineageEntryEnum.LineageEntryType type = 3;
+    oneof description {
+        string external_id = 1;
+        VersioningLineageEntry blob = 2;
+    };
 }
 
 // Add every item of "input" as a parent of every item on "output".
 message AddLineage {
-    repeated LineageEntry input = 1;
-    repeated LineageEntry output = 2;
+    // If not provided, a new ID will be created
+    uint64 id = 1;
+
+    // An output can be associated with at most one lineage entry. That is the same as saying
+    // something can't be created by two separated paths.
+    // We also associated all inputs with all outputs. If the user wants more fine-grained control,
+    // they can create multiple entries.
+    repeated LineageEntry input = 2;
+    repeated LineageEntry output = 3;
+
 
     message Response {
-        bool status = 1;
+        uint64 id = 1;
     }
 }
 
 // Delete every item of "input" as a parent of every item on "output".
 message DeleteLineage {
-    repeated LineageEntry input = 1;
-    repeated LineageEntry output = 2;
+    uint64 id = 1; // Required
+    repeated LineageEntry input = 2;
+    repeated LineageEntry output = 3;
 
     message Response {
         bool status = 1;
     }
+}
+
+// Represent a set of lineage items, essentially an array so that it can be embedded on other proto messages.
+message LineageEntryBatchRequest {
+    oneof identifier {
+        uint64 id = 1;
+        LineageEntry entry = 2;
+    }
+}
+
+// Returns the ID of the lineage entry and the set of items corresponding to that entry
+message LineageEntryBatchResponseSingle {
+    uint64 id = 1;
+    repeated LineageEntry items = 2;
+}
+
+message LineageEntryBatchResponse {
+    repeated LineageEntryBatchResponseSingle items = 1;
 }
 
 // For each item provided, list its inputs.
@@ -63,10 +92,10 @@ message DeleteLineage {
 // is the set of inputs for the corresponding i-th item provided in the
 // request.
 message FindAllInputs {
-    repeated LineageEntry items = 1;
+    repeated LineageEntryBatchRequest items = 1;
 
     message Response {
-        repeated LineageEntryBatch inputs = 1;
+        repeated LineageEntryBatchResponse inputs = 1;
     }
 }
 
@@ -76,10 +105,10 @@ message FindAllInputs {
 // is the set of outputs for the corresponding i-th item provided in the
 // request.
 message FindAllOutputs {
-    repeated LineageEntry items = 1;
+    repeated LineageEntryBatchRequest items = 1;
 
     message Response {
-        repeated LineageEntryBatch outputs = 1;
+        repeated LineageEntryBatchResponse outputs = 1;
     }
 }
 
@@ -89,11 +118,11 @@ message FindAllOutputs {
 // is the set of inputs and outputs for the corresponding i-th item provided in the
 // request.
 message FindAllInputsOutputs {
-    repeated LineageEntry items = 1;
+    repeated LineageEntryBatchRequest items = 1;
 
     message Response {
-        repeated LineageEntryBatch inputs = 1;
-        repeated LineageEntryBatch outputs = 2;
+        repeated LineageEntryBatchResponse inputs = 1;
+        repeated LineageEntryBatchResponse outputs = 2;
     }
 }
 

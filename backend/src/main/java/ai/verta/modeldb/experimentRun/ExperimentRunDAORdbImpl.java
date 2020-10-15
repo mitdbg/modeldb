@@ -672,11 +672,20 @@ public class ExperimentRunDAORdbImpl implements ExperimentRunDAO {
   }
 
   @Override
-  public boolean isExperimentRunExists(Session session, String experimentRunId) {
-    Query query = session.createQuery(CHECK_EXP_RUN_EXISTS_AT_UPDATE_HQL);
-    query.setParameter("experimentRunId", experimentRunId);
-    Long count = (Long) query.uniqueResult();
-    return count > 0;
+  public ExperimentRunEntity getExperimentRun(Session session, String experimentRunId) {
+    ExperimentRunEntity experimentRunEntity =
+        session.get(ExperimentRunEntity.class, experimentRunId);
+    if (experimentRunEntity == null) {
+      LOGGER.warn(ModelDBMessages.EXP_RUN_NOT_FOUND_ERROR_MSG);
+      Status status =
+          Status.newBuilder()
+              .setCode(Code.NOT_FOUND_VALUE)
+              .setMessage(ModelDBMessages.EXP_RUN_NOT_FOUND_ERROR_MSG)
+              .build();
+      throw StatusProto.toStatusRuntimeException(status);
+    }
+    LOGGER.debug("Got ExperimentRun successfully");
+    return experimentRunEntity;
   }
 
   @Override

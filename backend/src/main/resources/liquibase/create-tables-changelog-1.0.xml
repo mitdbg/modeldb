@@ -1239,6 +1239,75 @@
                                  referencedTableName="keyvalue"/>
     </changeSet>
 
+    <changeSet author="lezhevg" id="new_lineage_id">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="lineage_element" />
+            </not>
+        </preConditions>
+        <createTable tableName="lineage_element">
+            <column name="id" type="int8" autoIncrement="true" startWith="1">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="lezhevg" id="new_lineage_connection_entity">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="lineage_connection" />
+            </not>
+        </preConditions>
+        <createTable tableName="lineage_connection">
+            <column name="element_id" type="int8">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entity_id" type="int8">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="connection_type" type="int4">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entity_type" type="int4">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="lezhevg" id="new_lineage_versioning_blob_entity">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="lineage_versioning_blob" />
+            </not>
+        </preConditions>
+        <createTable tableName="lineage_versioning_blob">
+            <column name="id" type="int8" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="repository_id" type="int8">
+                <constraints nullable="true"/>
+            </column>
+            <column name="commit_sha" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="location" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="lezhevg" id="new_lineage_experiment_run_entity">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="lineage_experiment_run" />
+            </not>
+        </preConditions>
+        <createTable tableName="lineage_experiment_run">
+            <column name="id" type="int8" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="experiment_run_id" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
     <!-- WARNING: Do not add new change sets to these files -->
 
 </databaseChangeLog>

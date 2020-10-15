@@ -228,10 +228,10 @@ public class CommitTest {
         .build();
   }
 
-  private static PathDatasetBlob getPathDatasetBlob() {
+  private static PathDatasetBlob getPathDatasetBlob(String name) {
     return PathDatasetBlob.newBuilder()
         .addComponents(
-            getPathDatasetComponentBlob("/protos/proto/public/versioning/versioning.proto"))
+            getPathDatasetComponentBlob("/protos/proto/public/versioning/versioning.proto" + name))
         .build();
   }
 
@@ -255,9 +255,15 @@ public class CommitTest {
 
   static Blob getBlob(Blob.ContentCase contentCase)
       throws ModelDBException, NoSuchAlgorithmException {
+    return getBlob(contentCase, "");
+  }
+
+  static Blob getBlob(Blob.ContentCase contentCase, String name)
+      throws ModelDBException, NoSuchAlgorithmException {
     switch (contentCase) {
       case DATASET:
-        DatasetBlob datasetBlob = DatasetBlob.newBuilder().setPath(getPathDatasetBlob()).build();
+        DatasetBlob datasetBlob =
+            DatasetBlob.newBuilder().setPath(getPathDatasetBlob(name)).build();
         return Blob.newBuilder().setDataset(datasetBlob).build();
       case CODE:
         return getCodeBlobFromPath("abc");
@@ -346,6 +352,12 @@ public class CommitTest {
   public static CreateCommitRequest getCreateCommitRequest(
       Long repoId, long commitTime, Commit parentCommit, Blob.ContentCase contentCase)
       throws ModelDBException, NoSuchAlgorithmException {
+    return getCreateCommitRequest(repoId, commitTime, parentCommit, contentCase, "");
+  }
+
+  public static CreateCommitRequest getCreateCommitRequest(
+      Long repoId, long commitTime, Commit parentCommit, Blob.ContentCase contentCase, String name)
+      throws ModelDBException, NoSuchAlgorithmException {
 
     Commit commit =
         Commit.newBuilder()
@@ -353,12 +365,20 @@ public class CommitTest {
             .setDateCreated(commitTime)
             .addParentShas(parentCommit.getCommitSha())
             .build();
+    List<String> locations = new LinkedList<>();
+    locations.add("/");
+    if (!name.isEmpty()) {
+      locations.add(name);
+    }
     CreateCommitRequest createCommitRequest =
         CreateCommitRequest.newBuilder()
             .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(repoId).build())
             .setCommit(commit)
             .addBlobs(
-                BlobExpanded.newBuilder().setBlob(getBlob(contentCase)).addLocation("/").build())
+                BlobExpanded.newBuilder()
+                    .setBlob(getBlob(contentCase, name))
+                    .addAllLocation(locations)
+                    .build())
             .build();
 
     return createCommitRequest;

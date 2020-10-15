@@ -33,6 +33,14 @@ public interface RepositoryDAO {
       RepositoryEnums.RepositoryTypeEnum repositoryType)
       throws ModelDBException;
 
+  /**
+   * checks permissions and gets repository
+   *
+   * @param session current session
+   * @param id repository id
+   * @return repository entity
+   * @throws ModelDBException not found
+   */
   RepositoryEntity getRepositoryById(Session session, RepositoryIdentification id)
       throws ModelDBException;
 
