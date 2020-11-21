@@ -683,3 +683,30 @@ class TestEndpoint:
         excinfo_value = str(excinfo.value).strip()
         assert "403" in excinfo_value
         assert "Access Denied" in excinfo_value
+
+    def test_predict_dataframe_input(self, client, created_endpoints, model_version):
+        np = pytest.importorskip("numpy")
+        pd = pytest.importorskip("pandas")
+
+        endpoint = client.create_endpoint(_utils.generate_default_name())
+        created_endpoints.append(endpoint)
+
+        input = pd.DataFrame({"feature-1": [45.3, 42.5], "feature-2": [43, 45]})
+
+        with sys_path_manager() as sys_path:
+            sys_path.append(".")
+
+            from dataframe_custom_model.dataframe_model import DataFrameModel  # pylint: disable=import-error
+
+            df_model = DataFrameModel()
+            model_version.log_model(df_model, custom_modules=["dataframe_custom_model/"])
+
+            env = Python(requirements=["pandas=={}".format(pd.__version__)])
+            model_version.log_environment(env)
+
+            path = verta._internal_utils._utils.generate_default_name()
+            endpoint = client.set_endpoint(path)
+            created_endpoints.append(endpoint)
+            endpoint.update(model_version, DirectUpdateStrategy(), wait=True)
+
+            assert np.array_equal(endpoint.get_deployed_model().predict(input), df_model.predict(input))
