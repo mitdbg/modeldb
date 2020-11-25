@@ -231,6 +231,17 @@ class TestClientDatasetFunctions:
         )
         assert [dataset.id for dataset in datasets] == [dataset2.id, dataset1.id]
 
+    def test_dataset_features(self, client, created_datasets):
+        features = {
+            "int-features": 4,
+            "float-features": 0.3
+        }
+        fields = set([field for field in features])
+
+        dataset = client.set_dataset(type="local", attrs=features, features=features)
+        created_datasets.append(dataset)
+        assert set(map(lambda feature: feature.key, dataset.features)) == fields
+
 
 class TestClientDatasetVersionFunctions:
     def test_creation_from_scratch(self, client, created_datasets):
