@@ -577,17 +577,6 @@ public class ModelDBHibernateUtil {
           case ModelDBConstants.POPULATE_VERSION_MIGRATION:
             PopulateVersionMigration.execute(migrationConfig.record_update_limit);
             break;
-          case ModelDBConstants.DATASET_VERSIONING_MIGRATION:
-            CommonUtils.registeredBackgroundUtilsCount();
-            boolean isLocked = checkMigrationLockedStatus(migrationConfig.name, rdb);
-            if (!isLocked) {
-              LOGGER.debug("Obtaining migration lock");
-              lockedMigration(migrationConfig.name, rdb);
-              DatasetToRepositoryMigration.execute(migrationConfig.record_update_limit);
-            } else {
-              LOGGER.debug("Migration already locked");
-            }
-            break;
         }
       }
     }
