@@ -252,7 +252,9 @@ class TestEntities:
         proj = client.create_project()
         assert_new_run_in_proj()
 
-        client.get_or_create_repository(next(strs)).delete()
+        repo_name = next(strs)
+        print(repo_name)
+        client.get_or_create_repository(repo_name).delete()
         # client.create_repository(next(strs)).delete()  # method DNE
         assert_new_run_in_proj()
 
