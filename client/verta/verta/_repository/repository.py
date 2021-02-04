@@ -81,6 +81,7 @@ class Repository(object):
             workspace,
         )
         response = _utils.make_request("POST", endpoint, conn, json=data)
+        conn._request_to_curl(response.request)
         _utils.raise_for_http_error(response)
 
         response_msg = _utils.json_to_proto(_utils.body_to_json(response),
