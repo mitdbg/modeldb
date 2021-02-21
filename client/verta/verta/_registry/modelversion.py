@@ -188,61 +188,12 @@ class RegisteredModelVersion(_DeployableEntity):
     ModelVersionMessage = _RegistryService.ModelVersion
 
     def log_model(self, model, custom_modules=None, model_api=None, artifacts=None, overwrite=False):
-        """
-        Logs a model to this Model Version.
-
-        Parameters
-        ----------
-        model : str or file-like or object
-            Model or some representation thereof.
-                - If str, then it will be interpreted as a filesystem path, its contents read as bytes,
-                  and uploaded as an artifact. If it is a directory path, its contents will be zipped.
-                - If file-like, then the contents will be read as bytes and uploaded as an artifact.
-                - Otherwise, the object will be serialized and uploaded as an artifact.
-        custom_modules : list of str, optional
-            Paths to local Python modules and other files that the deployed model depends on.
-                - If directories are provided, all files within—excluding virtual environments—will
-                  be included.
-                - If not provided, all Python files located within `sys.path`—excluding virtual
-                  environments—will be included.
-        model_api : :class:`~utils.ModelAPI`, optional
-            Model API specifying details about the model and its deployment.
-        artifacts : list of str, optional
-            Keys of logged artifacts to be used by a class model.
-        overwrite : bool, default False
-            Whether to allow overwriting an existing artifact with key `key`.
-
-        """
         if self.has_model and not overwrite:
             raise ValueError("model already exists; consider setting overwrite=True")
 
-        if (artifacts is not None
-                and not (isinstance(artifacts, list)
-                         and all(isinstance(artifact_key, six.string_types) for artifact_key in artifacts))):
-            raise TypeError("`artifacts` must be list of str, not {}".format(type(artifacts)))
+        super(RegisteredModelVersion, self).log_model(model, custom_modules, model_api, artifacts, overwrite)
 
-        # validate that `artifacts` are actually logged
-        if artifacts:
-            self._refresh_cache()
-            run_msg = self._msg
-            existing_artifact_keys = {artifact.key for artifact in run_msg.artifacts}
-            unlogged_artifact_keys = set(artifacts) - existing_artifact_keys
-            if unlogged_artifact_keys:
-                raise ValueError("`artifacts` contains keys that have not been logged: {}".format(sorted(unlogged_artifact_keys)))
-
-        # associate artifact dependencies
-        if artifacts:
-            self.add_attribute(_MODEL_ARTIFACTS_ATTR_KEY, artifacts, overwrite=overwrite)
-
-        if isinstance(model, six.string_types):  # filepath
-            model = open(model, 'rb')
-        serialized_model, method, model_type = _artifact_utils.serialize_model(model)
-
-        try:
-            extension = _artifact_utils.get_file_ext(serialized_model)
-        except (TypeError, ValueError):
-            extension = _artifact_utils.ext_from_method(method)
-
+    def _log_model(self, serialized_model, extension, method, overwrite):
         # Create artifact message and update ModelVersion's message:
         model_msg = self._create_artifact_msg("model", serialized_model,
                                         artifact_type=_CommonCommonService.ArtifactTypeEnum.MODEL, extension=extension)
@@ -254,24 +205,6 @@ class RegisteredModelVersion(_DeployableEntity):
             "model", serialized_model,
             _CommonCommonService.ArtifactTypeEnum.MODEL,
         )
-
-        # Log modules:
-        custom_modules_artifact = self._custom_modules_as_artifact(custom_modules)
-        self.log_artifact("custom_modules", custom_modules_artifact, overwrite, 'zip')
-
-        # build model API
-        if model_api is None:
-            model_api = utils.ModelAPI()
-        elif not isinstance(model_api, utils.ModelAPI):
-            raise ValueError("`model_api` must be `verta.utils.ModelAPI`, not {}".format(type(model_api)))
-        if 'model_packaging' not in model_api:
-            # add model serialization info to model_api
-            model_api['model_packaging'] = {
-                'python_version': _utils.get_python_version(),
-                'type': model_type,
-                'deserialization': method,
-            }
-        self.log_artifact("model_api.json", model_api, overwrite, "json")
 
     def get_model(self):
         """
@@ -299,8 +232,7 @@ class RegisteredModelVersion(_DeployableEntity):
         self._msg.ClearField("model")
         self._update(self._msg, method="PUT")
 
-
-    def log_artifact(self, key, artifact, overwrite=False, _extension=None):
+    def log_artifact(self, key, artifact, overwrite=False):
         """
         Logs an artifact to this Model Version.
 
@@ -321,6 +253,9 @@ class RegisteredModelVersion(_DeployableEntity):
         if key == "model":
             raise ValueError("the key \"model\" is reserved for model; consider using log_model() instead")
 
+        self._log_artifact(key, artifact, _CommonCommonService.ArtifactTypeEnum.BLOB, overwrite=overwrite)
+
+    def _log_artifact(self, key, artifact, artifact_type, extension=None, method=None, overwrite=False):
         self._fetch_with_no_cache()
         same_key_ind = -1
 
@@ -332,19 +267,17 @@ class RegisteredModelVersion(_DeployableEntity):
                     same_key_ind = i
                 break
 
-        artifact_type = _CommonCommonService.ArtifactTypeEnum.BLOB
-
         if isinstance(artifact, six.string_types):  # filepath
             artifact = open(artifact, 'rb')
         artifact_stream, method = _artifact_utils.ensure_bytestream(artifact)
 
-        if not _extension:
+        if not extension:
             try:
-                _extension = _artifact_utils.get_file_ext(artifact_stream)
+                extension = _artifact_utils.get_file_ext(artifact_stream)
             except (TypeError, ValueError):
-                _extension = _artifact_utils.ext_from_method(method)
+                extension = _artifact_utils.ext_from_method(method)
 
-        artifact_msg = self._create_artifact_msg(key, artifact_stream, artifact_type=artifact_type, extension=_extension)
+        artifact_msg = self._create_artifact_msg(key, artifact_stream, artifact_type=artifact_type, extension=extension)
         if same_key_ind == -1:
             self._msg.artifacts.append(artifact_msg)
         else:
