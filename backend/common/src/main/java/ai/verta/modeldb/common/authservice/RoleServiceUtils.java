@@ -153,7 +153,11 @@ public class RoleServiceUtils implements RoleService {
 
   @Override
   public GetResourcesResponseItem getEntityResource(
-      Optional<String> entityId, Optional<String> entityName, Optional<String> workspaceName, ModelDBServiceResourceTypes modelDBServiceResourceTypes) {
+      Optional<String> entityId,
+      Optional<String> entityName,
+      Optional<String> workspaceName,
+      Optional<Long> workspaceId,
+      ModelDBServiceResourceTypes modelDBServiceResourceTypes) {
     try (AuthServiceChannel authServiceChannel = getAuthServiceChannel()) {
       ResourceType resourceType =
               ResourceType.newBuilder()
@@ -168,6 +172,7 @@ public class RoleServiceUtils implements RoleService {
       final GetResources.Builder getResourcesBuilder = GetResources.newBuilder().setResources(resources);
       entityName.ifPresent(getResourcesBuilder::setResourceName);
       workspaceName.ifPresent(getResourcesBuilder::setWorkspaceName);
+      workspaceId.ifPresent(getResourcesBuilder::setWorkspaceId);
 
       final GetResources.Response response =
               authServiceChannel
