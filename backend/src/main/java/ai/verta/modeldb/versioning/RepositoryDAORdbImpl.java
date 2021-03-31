@@ -1415,19 +1415,22 @@ public class RepositoryDAORdbImpl implements RepositoryDAO {
       Root<RepositoryEntity> repositoryRoot = criteriaQuery.from(RepositoryEntity.class);
       repositoryRoot.alias("ds");
 
-      Set<String> accessibleDatasetIds = new HashSet<>();
+      Set<String> accessibleResourceIdsWithCollaborator =
+          new HashSet<>(
+              roleService.getAccessibleResourceIds(
+                  null,
+                  new CollaboratorUser(authService, currentLoginUserInfo),
+                  ModelDBServiceResourceTypes.DATASET,
+                  queryParameters.getDatasetIdsList()));
+
       String workspaceName = queryParameters.getWorkspaceName();
 
       if (!workspaceName.isEmpty()
           && workspaceName.equals(authService.getUsernameFromUserInfo(currentLoginUserInfo))) {
         List<GetResourcesResponseItem> accessibleAllWorkspaceItems =
             roleService.getResourceItems(
-                null,
-                !queryParameters.getDatasetIdsList().isEmpty()
-                    ? new HashSet<>(queryParameters.getDatasetIdsList())
-                    : Collections.emptySet(),
-                ModelDBServiceResourceTypes.DATASET);
-        accessibleDatasetIds =
+                null, accessibleResourceIdsWithCollaborator, ModelDBServiceResourceTypes.DATASET);
+        accessibleResourceIdsWithCollaborator =
             accessibleAllWorkspaceItems.stream()
                 .map(GetResourcesResponseItem::getResourceId)
                 .collect(Collectors.toSet());
@@ -1441,11 +1444,11 @@ public class RepositoryDAORdbImpl implements RepositoryDAO {
         entities*/
         for (GetResourcesResponseItem item : accessibleAllWorkspaceItems) {
           if (orgWorkspaceIds.contains(String.valueOf(item.getWorkspaceId()))) {
-            accessibleDatasetIds.remove(item.getResourceId());
+            accessibleResourceIdsWithCollaborator.remove(item.getResourceId());
           }
         }
       } else {
-        accessibleDatasetIds =
+        accessibleResourceIdsWithCollaborator =
             ModelDBUtils.filterWorkspaceOnlyAccessibleIds(
                 roleService,
                 !queryParameters.getDatasetIdsList().isEmpty()
@@ -1456,7 +1459,7 @@ public class RepositoryDAORdbImpl implements RepositoryDAO {
                 ModelDBServiceResourceTypes.DATASET);
       }
 
-      if (accessibleDatasetIds.isEmpty() && roleService.IsImplemented()) {
+      if (accessibleResourceIdsWithCollaborator.isEmpty() && roleService.IsImplemented()) {
         LOGGER.debug("Accessible Dataset Ids not found, size 0");
         return getEmptyDatasetPaginationDTO();
       }
@@ -1468,15 +1471,18 @@ public class RepositoryDAORdbImpl implements RepositoryDAO {
         // Validate if current user has access to the entity or not where predicate key has an id
         RdbmsUtils.validatePredicates(
             ModelDBConstants.DATASETS,
-            new ArrayList<>(accessibleDatasetIds),
+            new ArrayList<>(accessibleResourceIdsWithCollaborator),
             predicate,
             roleService);
       }
 
-      if (!accessibleDatasetIds.isEmpty()) {
+      if (!accessibleResourceIdsWithCollaborator.isEmpty()) {
         Expression<String> exp = repositoryRoot.get(ModelDBConstants.ID);
         Predicate predicate2 =
-            exp.in(accessibleDatasetIds.stream().map(Long::parseLong).collect(Collectors.toList()));
+            exp.in(
+                accessibleResourceIdsWithCollaborator.stream()
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList()));
         finalPredicatesList.add(predicate2);
       }
 
