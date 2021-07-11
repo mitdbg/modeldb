@@ -9,7 +9,6 @@ import ai.verta.modeldb.common.interceptors.MetadataForwarder;
 import ai.verta.modeldb.config.TestConfig;
 import ai.verta.modeldb.cron_jobs.CronJobUtils;
 import ai.verta.modeldb.cron_jobs.DeleteEntitiesCron;
-import ai.verta.modeldb.metadata.MetadataServiceGrpc;
 import ai.verta.modeldb.monitoring.MonitoringInterceptor;
 import ai.verta.modeldb.reconcilers.ReconcilerInitializer;
 import ai.verta.modeldb.versioning.VersioningServiceGrpc;
@@ -57,7 +56,6 @@ public class TestsInit {
       versioningServiceBlockingStub;
   protected static VersioningServiceGrpc.VersioningServiceBlockingStub
       versioningServiceBlockingStubClient2;
-  protected static MetadataServiceGrpc.MetadataServiceBlockingStub metadataServiceBlockingStub;
   protected static DatasetServiceGrpc.DatasetServiceBlockingStub datasetServiceStub;
   protected static DatasetServiceGrpc.DatasetServiceBlockingStub datasetServiceStubClient2;
   protected static DatasetVersionServiceGrpc.DatasetVersionServiceBlockingStub
@@ -139,7 +137,6 @@ public class TestsInit {
     commentServiceBlockingStub = CommentServiceGrpc.newBlockingStub(channel);
     versioningServiceBlockingStub = VersioningServiceGrpc.newBlockingStub(channel);
     versioningServiceBlockingStubClient2 = VersioningServiceGrpc.newBlockingStub(client2Channel);
-    metadataServiceBlockingStub = MetadataServiceGrpc.newBlockingStub(channel);
     datasetServiceStub = DatasetServiceGrpc.newBlockingStub(channel);
     datasetServiceStubClient2 = DatasetServiceGrpc.newBlockingStub(client2Channel);
     datasetVersionServiceStub = DatasetVersionServiceGrpc.newBlockingStub(channel);

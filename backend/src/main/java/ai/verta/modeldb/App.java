@@ -314,7 +314,7 @@ public class App implements ApplicationContextAware {
 
     wrapService(serverBuilder, new VersioningServiceImpl(services, daos, new FileHasher()));
     LOGGER.trace("Versioning serviceImpl initialized");
-    wrapService(serverBuilder, new MetadataServiceImpl(daos));
+    wrapService(serverBuilder, new MetadataServiceImpl());
     LOGGER.trace("Metadata serviceImpl initialized");
     LOGGER.info("All services initialized and dependencies resolved");
   }
