@@ -294,12 +294,12 @@ def dir_and_files(strs, tmp_path, request):
     dirpath = tmp_path / request.param
 
     filepaths = {
-        os.path.join(strs[0], strs[1], strs[2]),
-        os.path.join(strs[0], strs[1], strs[3]),
-        os.path.join(strs[0], strs[2]),
-        os.path.join(strs[0], strs[4]),
-        os.path.join(strs[2]),
-        os.path.join(strs[5]),
+        "/".join([strs[0], strs[1], strs[2]]),
+        "/".join([strs[0], strs[1], strs[3]]),
+        "/".join([strs[0], strs[2]]),
+        "/".join([strs[0], strs[4]]),
+        "/".join([strs[2]]),
+        "/".join([strs[5]]),
     }
 
     for filepath in filepaths:
@@ -514,9 +514,9 @@ def organization(client, created_entities):
 
 @pytest.fixture
 def requirements_file():
-    with tempfile.NamedTemporaryFile("w+") as tempf:
+    with tempfile.NamedTemporaryFile("w+", delete=False) as tempf:
         # create requirements file from pip freeze
-        pip_freeze = subprocess.check_output([sys.executable, "-m", "pip", "freeze"])
+        pip_freeze = subprocess.check_output([sys.executable, "-m", "pip", "list", "--format=freeze"])
         pip_freeze = six.ensure_str(pip_freeze)
         tempf.write(pip_freeze)
         tempf.flush()  # flush object buffer

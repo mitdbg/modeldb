@@ -743,7 +743,7 @@ class RegisteredModelVersion(_deployable_entity._DeployableEntity):
             basename = key + os.extsep + extension
 
         # build upload path from checksum and basename
-        artifact_path = os.path.join(artifact_hash, basename)
+        artifact_path = "/".join([artifact_hash, basename])
 
         # TODO: support VERTA_ARTIFACT_DIR
 
